@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import keras
 from keras import layers, activations, models, preprocessing, utils
 import pickle
 import os
@@ -120,6 +121,17 @@ class Processor:
     def save_model(self, model, name="model.h5"):
         model.save(name)
 
+    def load_model(self, name="model.h5")
+        keras.models.load_model(name)
+
+    def save_tokenizer(self, model, name="tokenizer.pickle")
+        with open(name, "wb") as handle:
+            pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load_tokenizer(self, name="tokenizer.pickle")
+        with open(name, "rb") as handle:
+            tokenizer = pickle.load(handle)
+
     def chatbot_prep(self):
         tokenizer, vocab, vocab_size = create_tokenizer(self.questions, self.answers)
         encoder_input_data, decoder_input_data, decoder_output_data, maxlen_questions, maxlen_answers =
@@ -132,5 +144,7 @@ class Processor:
 
     def main(self):
         tokenizer, encoder, decoder = self.chatbot_prep()
-        self.save_model()
+        self.save_model(encoder, "encoder.h5")
+        self.save_model(decoder, "decoder.h5")
+        self.save_tokenizer(tokenizer)
         self.converse(tokenizer, encoder, decoder)
