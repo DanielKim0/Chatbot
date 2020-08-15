@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/home/daniel/miniconda3/envs/chatbot/bin/python"
+    "python.pythonPath": "/home/daniel/miniconda3/envs/chatbot/bin/python",
+    "python.linting.enabled": false
 }
