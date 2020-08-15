@@ -16,12 +16,7 @@ class Processor:
         self.answers = answeers
 
     def clean_data(self, questions, answers):
-        for con in conversations:
-            question = con[0]
-            answer = " ".join(con[1:])
-            if answer and type(answer) == str:
-                questions.append(question)
-                answers.append"<START> " + answer + " <END>")
+        answers = ["<START> " + answer + " <END>" for answer in answers]
         return questions, answers
 
     def create_tokenizer(self, questions, answers):
