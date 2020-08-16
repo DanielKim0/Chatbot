@@ -20,15 +20,14 @@ class Parser:
             for con in conversations:
                 q = con[0]
                 if len(con) > 2:
-                    replies = con[1:]
                     ans = ""
-                    for rep in replies:
+                    for rep in con[1:]:
                         ans += " " + rep
                     a = ans
                 elif len(con) > 1:
                     a = con[1]
 
-                if a and type(a) == str:
+                if type(a) == str:
                     questions.append(q)
                     answers.append(a)
 

@@ -4,6 +4,9 @@ import keras
 from keras import preprocessing, utils
 import pickle
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(gpus[0], True)
+
 
 class Processor:
     def __init__(self):
@@ -56,7 +59,7 @@ class Processor:
         output = decoder_dense(decoder_outputs)
         return decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense, output
 
-    def create_model(self, model_data, encoder_inputs, decoder_inputs, output, batch_size=50, epochs=100):
+    def create_model(self, model_data, encoder_inputs, decoder_inputs, output, batch_size=50, epochs=150):
         encoder_input_data, decoder_input_data, decoder_output_data = model_data
         model = tf.keras.models.Model([encoder_inputs, decoder_inputs], output)
         model.compile(optimizer=tf.keras.optimizers.RMSprop(), loss="categorical_crossentropy")
@@ -76,24 +79,29 @@ class Processor:
         decoder_states = [state_h, state_c]
         return tf.keras.models.Model([decoder_inputs] + decoder_states_inputs, [decoder_outputs] + decoder_states)
 
-    def tokenize(self, sentence, tokenizer, maxlen_questions):
+    def tokenize(self, sentence, tokenizer):
         words = sentence.lower().split()
         tokens = [tokenizer.word_index[word] for word in words]
-        return preprocessing.sequence.pad_sequences(tokens, maxlen=maxlen_questions, padding="post")
+        return preprocessing.sequence.pad_sequences([tokens], padding="post")
 
     def converse(self, encoder, decoder, tokenizer):
         while True:
             print(self.ask_question(encoder, decoder, tokenizer))
 
-    def ask_question(self, tokenizer, enc_model, dec_model):
-        states_values = enc_model.predict(self.tokenize(input("Enter question : ")))
+    def ask_question(self, encoder, decoder, tokenizer):
+        inp = input("Your input: ")
+        if not inp:
+            print("Input empty!")
+            return None
+
+        states_values = encoder.predict(self.tokenize(inp, tokenizer))
         empty_target_seq = np.zeros((1, 1))
         empty_target_seq[0, 0] = tokenizer.word_index["start"]
 
         stop = False
         decoded = ""
         while not stop:
-            dec_outputs, h, c = dec_model.predict([empty_target_seq] + states_values)
+            dec_outputs, h, c = decoder.predict([empty_target_seq] + states_values)
             sampled_word_index = np.argmax(dec_outputs[0, -1, :])
             sampled_word = None
 
@@ -109,13 +117,14 @@ class Processor:
             empty_target_seq[0, 0] = sampled_word_index
             states_values = [h, c]
 
-        return decoded
+        # remove the "end" tag
+        return decoded[:-4]
 
     def save_model(self, model, name="model.h5"):
         model.save(name)
 
     def load_model(self, name="model.h5"):
-        keras.models.load_model(name)
+        return keras.models.load_model(name)
 
     def save_tokenizer(self, model, name="tokenizer.pickle"):
         with open(name, "wb") as handle:
@@ -126,6 +135,7 @@ class Processor:
             return pickle.load(handle)
 
     def chatbot_prep(self, questions, answers):
+        questions, answers = self.clean_data(questions, answers)
         tokenizer, vocab, vocab_size = self.create_tokenizer(questions, answers)
         model_data, maxlen_questions, maxlen_answers = self.prep_data(tokenizer, questions, answers, vocab_size)
         encoder_inputs, encoder_states = self.create_encoder(maxlen_questions, vocab_size)
@@ -133,11 +143,11 @@ class Processor:
         self.create_model(model_data, encoder_inputs, decoder_inputs, output)
         encoder = self.encoder_inference(encoder_inputs, encoder_states)
         decoder = self.decoder_inference(decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense)
-        return tokenizer, encoder, decoder
+        return encoder, decoder, tokenizer
 
     def main(self, questions, answers):
-        tokenizer, encoder, decoder = self.chatbot_prep(questions, answers)
+        encoder, decoder, tokenizer = self.chatbot_prep(questions, answers)
         self.save_model(encoder, "encoder.h5")
         self.save_model(decoder, "decoder.h5")
         self.save_tokenizer(tokenizer)
-        self.converse(tokenizer, encoder, decoder)
+        self.converse(encoder, decoder, tokenizer)
