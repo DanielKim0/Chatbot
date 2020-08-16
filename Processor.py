@@ -85,6 +85,12 @@ class Processor:
                 return None
         return preprocessing.sequence.pad_sequences([tokens], padding="post")
 
+    def converse_preload(self, encoder_file, decoder_file, tokenizer_file):
+        encoder = self.load_model(encoder_file)
+        decoder = self.load_model(decoder_file)
+        tokenizer = self.load_tokenizer(tokenizer_file)
+        bot.converse(encoder, decoder, tokenizer)
+
     def converse(self, encoder, decoder, tokenizer):
         while True:
             answer = self.ask_question(encoder, decoder, tokenizer)
