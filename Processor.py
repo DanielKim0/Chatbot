@@ -1,19 +1,14 @@
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 import keras
-from keras import layers, activations, models, preprocessing, utils
+from keras import preprocessing, utils
 import pickle
-import os
-import yaml
-from gensim.models import Word2Vec
-import re
 
 
 class Processor:
     def __init__(self, questions, answers):
         self.questions = questions
-        self.answers = answeers
+        self.answers = answers
 
     def clean_data(self, questions, answers):
         answers = ["<START> " + answer + " <END>" for answer in answers]
@@ -44,31 +39,35 @@ class Processor:
         onehot_answers = utils.to_categorical(padded_answers, vocab_size)
         decoder_output_data = np.array(onehot_answers)
 
-        return encoder_input_data, decoder_input_data, decoder_output_data, maxlen_questions, maxlen_answers
+        return (encoder_input_data, decoder_input_data, decoder_output_data), maxlen_questions, maxlen_answers
 
-    def create_model(self, maxlen_questions, maxlen_answers, vocab_size, batch_size=64, epochs=128):
+    def create_encoder(self, maxlen_questions, vocab_size):
         encoder_inputs = tf.keras.layers.Input(shape=(maxlen_questions, ))
         encoder_embedding = tf.keras.layers.Embedding(vocab_size, 200, mask_zero=True)(encoder_inputs)
         encoder_outputs, state_h, state_c = tf.keras.layers.LSTM(200, return_state=True)(encoder_embedding)
         encoder_states = [state_h, state_c]
+        return encoder_inputs, encoder_states
 
+    def create_decoder(self, maxlen_answers, vocab_size, encoder_states):
         decoder_inputs = tf.keras.layers.Input(shape=(maxlen_answers,))
         decoder_embedding = tf.keras.layers.Embedding(vocab_size, 200, mask_zero=True)(decoder_inputs)
         decoder_lstm = tf.keras.layers.LSTM(200, return_state=True, return_sequences=True)
         decoder_outputs, _, _ = decoder_lstm(decoder_embedding, initial_state=encoder_states)
         decoder_dense = tf.keras.layers.Dense(vocab_size, activation=tf.keras.activations.softmax)
         output = decoder_dense(decoder_outputs)
+        return decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense, output
 
+    def create_model(self, model_data, encoder_inputs, decoder_inputs, output, batch_size=50, epochs=100):
+        encoder_input_data, decoder_input_data, decoder_output_data = model_data
         model = tf.keras.models.Model([encoder_inputs, decoder_inputs], output)
         model.compile(optimizer=tf.keras.optimizers.RMSprop(), loss="categorical_crossentropy")
-        model.fit([encoder_input_data, decoder_input_data], decoder_output_data, batch_size=batch_size, epochs=epochs)1
-
-        return model, encoder_inputs, encoder_states, decoder_embedding
+        model.fit([encoder_input_data, decoder_input_data], decoder_output_data, batch_size=batch_size, epochs=epochs)
+        return model
 
     def encoder_inference(self, encoder_inputs, encoder_states):
         return tf.keras.models.Model(encoder_inputs, encoder_states)
 
-    def decoder_inference(self, decoder_embedding):
+    def decoder_inference(self, decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense):
         decoder_state_input_h = tf.keras.layers.Input(shape=(200,))
         decoder_state_input_c = tf.keras.layers.Input(shape=(200,))
         decoder_states_inputs = [decoder_state_input_h, decoder_state_input_c]
@@ -78,7 +77,7 @@ class Processor:
         decoder_states = [state_h, state_c]
         return tf.keras.models.Model([decoder_inputs] + decoder_states_inputs, [decoder_outputs] + decoder_states)
 
-    def str_to_tokens(sentence, tokenizer):
+    def tokenize(self, sentence, tokenizer, maxlen_questions):
         words = sentence.lower().split()
         tokens = [tokenizer.word_index[word] for word in words]
         return preprocessing.sequence.pad_sequences(tokens, maxlen=maxlen_questions, padding="post")
@@ -88,7 +87,7 @@ class Processor:
             print(self.ask_question(encoder, decoder, tokenizer))
 
     def ask_question(self, enc_model, dec_model, tokenizer):
-        states_values = enc_model.predict(str_to_tokens(input("Enter question : ")))
+        states_values = enc_model.predict(self.tokenize(input("Enter question : ")))
         empty_target_seq = np.zeros((1, 1))
         empty_target_seq[0, 0] = tokenizer.word_index["start"]
 
@@ -116,25 +115,25 @@ class Processor:
     def save_model(self, model, name="model.h5"):
         model.save(name)
 
-    def load_model(self, name="model.h5")
+    def load_model(self, name="model.h5"):
         keras.models.load_model(name)
 
-    def save_tokenizer(self, model, name="tokenizer.pickle")
+    def save_tokenizer(self, model, name="tokenizer.pickle"):
         with open(name, "wb") as handle:
-            pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(model, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def load_tokenizer(self, name="tokenizer.pickle")
+    def load_tokenizer(self, name="tokenizer.pickle"):
         with open(name, "rb") as handle:
-            tokenizer = pickle.load(handle)
+            return pickle.load(handle)
 
     def chatbot_prep(self):
-        tokenizer, vocab, vocab_size = create_tokenizer(self.questions, self.answers)
-        encoder_input_data, decoder_input_data, decoder_output_data, maxlen_questions, maxlen_answers =
-            self.prep_data(tokenizer, self.questions, self.answers, vocab_size)
-        model, encoder_inputs, encoder_states, decoder_embedding =
-            self.create_model(maxlen_questions, maxlen_answers, vocab_size)
+        tokenizer, vocab, vocab_size = self.create_tokenizer(self.questions, self.answers)
+        model_data, maxlen_questions, maxlen_answers = self.prep_data(tokenizer, self.questions, self.answers, vocab_size)
+        encoder_inputs, encoder_states = self.create_encoder(maxlen_questions, vocab_size)
+        decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense, output = self.create_decoder(maxlen_answers, vocab_size, encoder_states)
+        self.create_model(model_data, encoder_inputs, decoder_inputs, output)
         encoder = self.encoder_inference(encoder_inputs, encoder_states)
-        decoder = self.decoder_inference(decoder_embedding)
+        decoder = self.decoder_inference(decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense)
         return tokenizer, encoder, decoder
 
     def main(self):

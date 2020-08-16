@@ -73,7 +73,3 @@ class Parser:
         questions, answers = self.parse_simple()
         self.store_data(questions, answers)
         return questions, answers
-
-#p = Parser("/home/daniel/Downloads/train-v2.0.json")
-p = Parser("/home/daniel/Downloads/chatbot_nlp/data")
-q, a = p.main()
