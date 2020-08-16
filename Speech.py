@@ -5,6 +5,7 @@ import pyttsx3
 class TTS:
     def __init__(self):
         self.tts = pyttsx3.init()
+        self.tts.setProperty("rate", 150)
 
     def text_to_speech(self, text):
         self.tts.say(text)
@@ -18,5 +19,10 @@ class STT:
 
     def speech_to_text(self):
         with self.mic as source:
+            self.rec.adjust_for_ambient_noise(source)
+            print("Speak into your microphone: ")
             audio = self.rec.listen(source)
-        return self.rec.recognize_google(audio)
+            print("Done!")
+        text = self.rec.recognize_google(audio)
+        print("Your speech was recognized as: " + text)
+        return text

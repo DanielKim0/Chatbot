@@ -97,7 +97,7 @@ class Processor:
             return None
 
         tokenized = self.tokenize(inp, self.tokenizer)
-        if not tokenized:
+        if tokenized is None:
             print("Sorry! The bot could not understand your input.")
             return None
         state_values = self.encoder.predict(tokenized)
@@ -130,7 +130,7 @@ class Processor:
         model.save(name)
 
     def load_model(self, name="model.h5"):
-        return keras.models.load_model(name)
+        return keras.models.load_model(name, compile=False)
 
     def save_tokenizer(self, model, name="tokenizer.pickle"):
         with open(name, "wb") as handle:
@@ -143,7 +143,7 @@ class Processor:
     def load_all(self, encoder, decoder, tokenizer):
         self.encoder = self.load_model(encoder)
         self.decoder = self.load_model(decoder)
-        self.tokenizer = self.load_model(tokenizer)
+        self.tokenizer = self.load_tokenizer(tokenizer)
 
     def chatbot_prep(self, questions, answers):
         questions, answers = self.clean_data(questions, answers)

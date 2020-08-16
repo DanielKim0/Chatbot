@@ -14,6 +14,7 @@ tts = TTS()
 stt = STT()
 
 while True:
-    inp = STT.speech_to_text()
+    inp = stt.speech_to_text()
     ans = bot.ask_question(inp)
-    TTS.text_to_speech(ans)
+    print("The bot said: " + ans)
+    tts.text_to_speech(ans)
