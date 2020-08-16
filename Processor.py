@@ -29,11 +29,7 @@ class Processor:
         padded_questions = preprocessing.sequence.pad_sequences(tokenized_questions, maxlen=maxlen_questions, padding="post")
         encoder_input_data = np.array(padded_questions)
 
-        tokenized_answers = tokenizer.texts_to_sequences(answers)
-        maxlen_answers = max([len(x) for x in tokenized_answers])
-        padded_answers = preprocessing.sequence.pad_sequences(tokenized_answers, maxlen=maxlen_answers, padding="post")
-        decoder_input_data = np.array(padded_answers)
-
+        tokenized_answers = tokenizer.texts_to_sequences(answers)        tokens = [tokenizer.word_index[word] for word in words]
         tokenized_answers = tokenizer.texts_to_sequences(answers)
         for i in range(len(tokenized_answers)):
             tokenized_answers[i] = tokenized_answers[i][1:]
@@ -81,12 +77,19 @@ class Processor:
 
     def tokenize(self, sentence, tokenizer):
         words = sentence.lower().split()
-        tokens = [tokenizer.word_index[word] for word in words]
+        tokens = []
+        for word in words:
+            if word in tokenizer.word_index:
+                tokens.append(tokenizer.word_index[word])
+            else:
+                return None
         return preprocessing.sequence.pad_sequences([tokens], padding="post")
 
     def converse(self, encoder, decoder, tokenizer):
         while True:
-            print(self.ask_question(encoder, decoder, tokenizer))
+            answer = self.ask_question(encoder, decoder, tokenizer)
+            if answer:
+                print(answer)
 
     def ask_question(self, encoder, decoder, tokenizer):
         inp = input("Your input: ")
@@ -94,14 +97,18 @@ class Processor:
             print("Input empty!")
             return None
 
-        states_values = encoder.predict(self.tokenize(inp, tokenizer))
+        tokenized = self.tokenize(inp, tokenizer)
+        if not tokenized:
+            print("Sorry! The bot could not understand your input.")
+            return None
+        state_values = encoder.predict(tokenized)
         empty_target_seq = np.zeros((1, 1))
         empty_target_seq[0, 0] = tokenizer.word_index["start"]
 
         stop = False
         decoded = ""
         while not stop:
-            dec_outputs, h, c = decoder.predict([empty_target_seq] + states_values)
+            dec_outputs, h, c = decoder.predict([empty_target_seq] + state_values)
             sampled_word_index = np.argmax(dec_outputs[0, -1, :])
             sampled_word = None
 
@@ -115,7 +122,7 @@ class Processor:
 
             empty_target_seq = np.zeros((1, 1))
             empty_target_seq[0, 0] = sampled_word_index
-            states_values = [h, c]
+            state_values = [h, c]
 
         # remove the "end" tag
         return decoded[:-4]
