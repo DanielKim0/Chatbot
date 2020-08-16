@@ -1,23 +1,22 @@
 import speech_recognition as sr
 import pyttsx3
-import os
 
 
-class Speech:
+class TTS:
     def __init__(self):
         self.tts = pyttsx3.init()
-        pass
-
-    def speech_to_text(self):
-        pass
 
     def text_to_speech(self, text):
         self.tts.say(text)
         self.tts.runAndWait()
 
-    def main(self):
-        self.text_to_speech("Hello world!")
 
+class STT:
+    def __init__(self):
+        self.rec = sr.Recognizer()
+        self.mic = sr.Microphone()
 
-s = Speech()
-s.main()
+    def speech_to_text(self):
+        with self.mic as source:
+            audio = self.rec.listen(source)
+        return self.rec.recognize_google(audio)

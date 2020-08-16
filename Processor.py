@@ -10,7 +10,9 @@ tf.config.experimental.set_memory_growth(gpus[0], True)
 
 class Processor:
     def __init__(self):
-        pass
+        self.encoder = None
+        self.decoder = None
+        self.tokenizer = None
 
     def clean_data(self, questions, answers):
         answers = ["<START> " + answer + " <END>" for answer in answers]
@@ -85,20 +87,7 @@ class Processor:
                 return None
         return preprocessing.sequence.pad_sequences([tokens], padding="post")
 
-    def converse_preload(self, encoder_file, decoder_file, tokenizer_file):
-        encoder = self.load_model(encoder_file)
-        decoder = self.load_model(decoder_file)
-        tokenizer = self.load_tokenizer(tokenizer_file)
-        bot.converse(encoder, decoder, tokenizer)
-
-    def converse(self, encoder, decoder, tokenizer):
-        while True:
-            answer = self.ask_question(encoder, decoder, tokenizer)
-            if answer:
-                print(answer)
-
-    def ask_question(self, encoder, decoder, tokenizer):
-        inp = input("Your input: ")
+    def ask_question(self, inp):
         if not inp:
             print("Input empty!")
             return None
@@ -147,6 +136,11 @@ class Processor:
         with open(name, "rb") as handle:
             return pickle.load(handle)
 
+    def load_all(self, encoder, decoder, tokenizer):
+        self.encoder = load_model(encoder)
+        self.decoder = load_model(decoder)
+        self.tokenizer = load_model(tokenizer)
+
     def chatbot_prep(self, questions, answers):
         questions, answers = self.clean_data(questions, answers)
         tokenizer, vocab, vocab_size = self.create_tokenizer(questions, answers)
@@ -159,8 +153,7 @@ class Processor:
         return encoder, decoder, tokenizer
 
     def main(self, questions, answers):
-        encoder, decoder, tokenizer = self.chatbot_prep(questions, answers)
-        self.save_model(encoder, "encoder.h5")
-        self.save_model(decoder, "decoder.h5")
-        self.save_tokenizer(tokenizer)
-        self.converse(encoder, decoder, tokenizer)
+        self.encoder, self.decoder, self.tokenizer = self.chatbot_prep(questions, answers)
+        while True:
+            inp = input("Enter text: ")
+            print(self.ask_question(inp))
