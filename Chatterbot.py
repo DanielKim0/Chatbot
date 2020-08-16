@@ -11,13 +11,8 @@ class ChatterbotBot:
     def __init__(self):
         self.bot = ChatBot('ChatterbotBot',
             storage_adapter='chatterbot.storage.SQLStorageAdapter',
-            preprocessors=[
-                'chatterbot.preprocessors.clean_whitespace',
-            ],
-            logic_adapters=[
-                'chatterbot.logic.MathematicalEvaluation',
-                'chatterbot.logic.TimeLogicAdapter'
-            ],
+            preprocessors=['chatterbot.preprocessors.clean_whitespace'],
+            logic_adapters=['chatterbot.logic.MathematicalEvaluation', 'chatterbot.logic.TimeLogicAdapter'],
             database_uri='sqlite:///chatterbotbot.db'
         )
 

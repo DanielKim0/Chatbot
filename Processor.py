@@ -6,9 +6,8 @@ import pickle
 
 
 class Processor:
-    def __init__(self, questions, answers):
-        self.questions = questions
-        self.answers = answers
+    def __init__(self):
+        pass
 
     def clean_data(self, questions, answers):
         answers = ["<START> " + answer + " <END>" for answer in answers]
@@ -86,7 +85,7 @@ class Processor:
         while True:
             print(self.ask_question(encoder, decoder, tokenizer))
 
-    def ask_question(self, enc_model, dec_model, tokenizer):
+    def ask_question(self, tokenizer, enc_model, dec_model):
         states_values = enc_model.predict(self.tokenize(input("Enter question : ")))
         empty_target_seq = np.zeros((1, 1))
         empty_target_seq[0, 0] = tokenizer.word_index["start"]
@@ -126,9 +125,9 @@ class Processor:
         with open(name, "rb") as handle:
             return pickle.load(handle)
 
-    def chatbot_prep(self):
-        tokenizer, vocab, vocab_size = self.create_tokenizer(self.questions, self.answers)
-        model_data, maxlen_questions, maxlen_answers = self.prep_data(tokenizer, self.questions, self.answers, vocab_size)
+    def chatbot_prep(self, questions, answers):
+        tokenizer, vocab, vocab_size = self.create_tokenizer(questions, answers)
+        model_data, maxlen_questions, maxlen_answers = self.prep_data(tokenizer, questions, answers, vocab_size)
         encoder_inputs, encoder_states = self.create_encoder(maxlen_questions, vocab_size)
         decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense, output = self.create_decoder(maxlen_answers, vocab_size, encoder_states)
         self.create_model(model_data, encoder_inputs, decoder_inputs, output)
@@ -136,8 +135,8 @@ class Processor:
         decoder = self.decoder_inference(decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense)
         return tokenizer, encoder, decoder
 
-    def main(self):
-        tokenizer, encoder, decoder = self.chatbot_prep()
+    def main(self, questions, answers):
+        tokenizer, encoder, decoder = self.chatbot_prep(questions, answers)
         self.save_model(encoder, "encoder.h5")
         self.save_model(decoder, "decoder.h5")
         self.save_tokenizer(tokenizer)
