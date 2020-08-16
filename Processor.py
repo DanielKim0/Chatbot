@@ -31,7 +31,11 @@ class Processor:
         padded_questions = preprocessing.sequence.pad_sequences(tokenized_questions, maxlen=maxlen_questions, padding="post")
         encoder_input_data = np.array(padded_questions)
 
-        tokenized_answers = tokenizer.texts_to_sequences(answers)        tokens = [tokenizer.word_index[word] for word in words]
+        tokenized_answers = tokenizer.texts_to_sequences(answers)
+        maxlen_answers = max([len(x) for x in tokenized_answers])
+        padded_answers = preprocessing.sequence.pad_sequences(tokenized_answers, maxlen=maxlen_answers, padding="post")
+        decoder_input_data = np.array(padded_answers)
+
         tokenized_answers = tokenizer.texts_to_sequences(answers)
         for i in range(len(tokenized_answers)):
             tokenized_answers[i] = tokenized_answers[i][1:]
@@ -92,22 +96,22 @@ class Processor:
             print("Input empty!")
             return None
 
-        tokenized = self.tokenize(inp, tokenizer)
+        tokenized = self.tokenize(inp, self.tokenizer)
         if not tokenized:
             print("Sorry! The bot could not understand your input.")
             return None
-        state_values = encoder.predict(tokenized)
+        state_values = self.encoder.predict(tokenized)
         empty_target_seq = np.zeros((1, 1))
-        empty_target_seq[0, 0] = tokenizer.word_index["start"]
+        empty_target_seq[0, 0] = self.tokenizer.word_index["start"]
 
         stop = False
         decoded = ""
         while not stop:
-            dec_outputs, h, c = decoder.predict([empty_target_seq] + state_values)
+            dec_outputs, h, c = self.decoder.predict([empty_target_seq] + state_values)
             sampled_word_index = np.argmax(dec_outputs[0, -1, :])
             sampled_word = None
 
-            for word, index in tokenizer.word_index.items():
+            for word, index in self.tokenizer.word_index.items():
                 if sampled_word_index == index:
                     decoded += " {}".format(word)
                     sampled_word = word
@@ -137,9 +141,9 @@ class Processor:
             return pickle.load(handle)
 
     def load_all(self, encoder, decoder, tokenizer):
-        self.encoder = load_model(encoder)
-        self.decoder = load_model(decoder)
-        self.tokenizer = load_model(tokenizer)
+        self.encoder = self.load_model(encoder)
+        self.decoder = self.load_model(decoder)
+        self.tokenizer = self.load_model(tokenizer)
 
     def chatbot_prep(self, questions, answers):
         questions, answers = self.clean_data(questions, answers)
