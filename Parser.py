@@ -3,6 +3,7 @@ import gzip
 import os
 import yaml
 
+
 class Parser:
     def __init__(self, path):
         self.path = path
@@ -41,7 +42,7 @@ class Parser:
         lines_parsed = 0
         with open("log.txt") as f:
             for line in f:
-                que, ans = parse_line(line)
+                que, ans = self.parse_line(line)
                 questions.extend(que)
                 answers.extend(ans)
                 if lines_parsed % 1000 == 0:
