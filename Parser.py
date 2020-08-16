@@ -33,19 +33,20 @@ class Parser:
 
         return questions, answers
 
-    def parse_google(self, path):
+    def parse_google(self):
         # line-by-line using file object as iterator to save memory
         questions = []
         answers = []
 
         lines_parsed = 0
-        with open("log.txt") as f:
+        with open(self.path) as f:
             for line in f:
                 que, ans = self.parse_line(line)
                 questions.extend(que)
                 answers.extend(ans)
                 if lines_parsed % 1000 == 0:
-                    print("Lines parsed: " + str(lines_parsed) + "\n")
+                    print("Lines parsed: " + str(lines_parsed))
+                lines_parsed += 1
 
         return questions, answers
 
@@ -55,7 +56,7 @@ class Parser:
 
         data = json.loads(line)
         question = data["question_text"]
-        for item in data["long answer candidates"]:
+        for item in data["long_answer_candidates"]:
             answer = " ".join(data["document_text"].split(" ")[int(item["start_token"]):int(item["end_token"])])
             questions.append(question)
             answers.append(answer)

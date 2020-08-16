@@ -61,7 +61,7 @@ class Processor:
         output = decoder_dense(decoder_outputs)
         return decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense, output
 
-    def create_model(self, model_data, encoder_inputs, decoder_inputs, output, batch_size=50, epochs=150):
+    def create_model(self, model_data, encoder_inputs, decoder_inputs, output, batch_size=128, epochs=256):
         encoder_input_data, decoder_input_data, decoder_output_data = model_data
         model = tf.keras.models.Model([encoder_inputs, decoder_inputs], output)
         model.compile(optimizer=tf.keras.optimizers.RMSprop(), loss="categorical_crossentropy")
