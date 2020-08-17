@@ -6,21 +6,23 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--data_save", action="store_true", help="Whether to save parser-generated data.")
-    parser.add_argument("-g", "--google", action="store_true", help="Whether to parse google instead of parse simple corpus.")
+    parser.add_argument("-s", "--tts", action="store_true", help="Whether to include TTS and STT functionality.")
+    parser.add_argument("-qa", "--qa_save", action="store_true", help="Whether to save parser-generated question/answer data.")
+    parser.add_argument("-g", "--google", action="store_true", help="Whether to parse google corpus instead of parse simple corpus.")
     parser.add_argument("-c", "--corpus", type=str, help="Path to the corpus for the parser to parse.")
     parser.add_argument("-m", "--model_save", action="store_true", help="Whether to save processor-generated models.")
-    parser.add_argument("-l", "--load", action="store_true", help="Whether to load model files into the bot. If true, ignores parser args.")
+    parser.add_argument("-l", "--load", action="store_true", help="Whether to load model files into the bot.")
     parser.add_argument("-e", "--encoder", type=str, default="encoder.h5", help="Path to encoder file to load.")
     parser.add_argument("-d", "--decoder", type=str, default="decoder.h5", help="Path to decoder file to load.")
     parser.add_argument("-t", "--tokenizer", type=str, default="tokenizer.pickle", help="Path to tokenizer file to load.")
-    parser.add_argument("-s", "--tts", action="store_true", help="Whether to include TTS and STT functionality.")
     args = parser.parse_args()
     return vars(args)
 
 
 if __name__ == "__main__":
     args = parse_args()
+    if not args["load"] and "corpus" not in args:
+        raise ValueError("Need a corpus for the parser to parse.")
 
     bot = Processor()
     if args["load"]:
