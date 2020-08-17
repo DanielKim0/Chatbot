@@ -2,6 +2,7 @@ import os
 from chatterbot import ChatBot
 from chatterbot.trainers import UbuntuCorpusTrainer, ChatterBotCorpusTrainer
 
+
 class ChatterbotBot:
     """This is a (very simple) conversational bot using chatterbot, a popular open-source chatbot framework. The bot
     can be trained easily. This is just a 'tech-demo' that could be fleshed out to a higher degree, such as adding more
@@ -34,6 +35,7 @@ class ChatterbotBot:
         while True:
             statement = input()
             print("\n" + self.talk(statement) + "\n")
+
 
 if __name__ == "__main__":
     bot = ChatterbotBot()

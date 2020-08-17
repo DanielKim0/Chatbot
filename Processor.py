@@ -15,10 +15,13 @@ class Processor:
         self.tokenizer = None
 
     def clean_data(self, questions, answers):
+        """Function that cleans and tags question/answer data for use later."""
         answers = ["<START> " + answer + " <END>" for answer in answers]
         return questions, answers
 
     def create_tokenizer(self, questions, answers):
+        """Function that creates a tokenizer using the question/answer data. Tokenizer vectorizes a set of words into
+        a numerical vector, which then can be read into the machine-learning model."""
         tokenizer = preprocessing.text.Tokenizer()
         tokenizer.fit_on_texts(questions + answers)
         vocab_size = len(tokenizer.word_index) + 1
@@ -26,6 +29,8 @@ class Processor:
         return tokenizer, vocab, vocab_size
 
     def prep_data(self, tokenizer, questions, answers, vocab_size):
+        """Function that takes the question/answer data and preps it, which includes tokenizing and padding the data
+        to make it readable and separating it for use by the decoder and encoder."""
         tokenized_questions = tokenizer.texts_to_sequences(questions)
         maxlen_questions = max([len(x) for x in tokenized_questions])
         padded_questions = preprocessing.sequence.pad_sequences(tokenized_questions, maxlen=maxlen_questions, padding="post")
@@ -46,6 +51,8 @@ class Processor:
         return (encoder_input_data, decoder_input_data, decoder_output_data), maxlen_questions, maxlen_answers
 
     def create_encoder(self, maxlen_questions, vocab_size):
+        """Function that creates encoder data according to a seq-to-seq model. Encoders process the input and return state
+        vectors that are used later on by the decoder."""
         encoder_inputs = tf.keras.layers.Input(shape=(maxlen_questions, ))
         encoder_embedding = tf.keras.layers.Embedding(vocab_size, 200, mask_zero=True)(encoder_inputs)
         encoder_outputs, state_h, state_c = tf.keras.layers.LSTM(200, return_state=True)(encoder_embedding)
@@ -53,6 +60,8 @@ class Processor:
         return encoder_inputs, encoder_states
 
     def create_decoder(self, maxlen_answers, vocab_size, encoder_states):
+        """Function that creates decoder data according to a seq-to-seq model. Decoders are trained to predict the next
+        values of a target sequence, in this case the inputted encoder's data."""
         decoder_inputs = tf.keras.layers.Input(shape=(maxlen_answers,))
         decoder_embedding = tf.keras.layers.Embedding(vocab_size, 200, mask_zero=True)(decoder_inputs)
         decoder_lstm = tf.keras.layers.LSTM(200, return_state=True, return_sequences=True)
@@ -62,6 +71,7 @@ class Processor:
         return decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense, output
 
     def create_model(self, model_data, encoder_inputs, decoder_inputs, output, batch_size=128, epochs=256):
+        """Function that actually creates and trains the seq-to-seq model using the encoder/decoder data provided."""
         encoder_input_data, decoder_input_data, decoder_output_data = model_data
         model = tf.keras.models.Model([encoder_inputs, decoder_inputs], output)
         model.compile(optimizer=tf.keras.optimizers.RMSprop(), loss="categorical_crossentropy")
@@ -69,9 +79,11 @@ class Processor:
         return model
 
     def encoder_inference(self, encoder_inputs, encoder_states):
+        """Function that creates a front-facing encoder inference model that converts inputted data to states."""
         return tf.keras.models.Model(encoder_inputs, encoder_states)
 
     def decoder_inference(self, decoder_inputs, decoder_embedding, decoder_lstm, decoder_dense):
+        """Function that creates a front-facing decoder inference model that pairs with the encoder model."""
         decoder_state_input_h = tf.keras.layers.Input(shape=(200,))
         decoder_state_input_c = tf.keras.layers.Input(shape=(200,))
         decoder_states_inputs = [decoder_state_input_h, decoder_state_input_c]
@@ -82,6 +94,7 @@ class Processor:
         return tf.keras.models.Model([decoder_inputs] + decoder_states_inputs, [decoder_outputs] + decoder_states)
 
     def tokenize(self, sentence, tokenizer):
+        """Function that tokenizes an inputted sentence using the tokenizer generated earlier."""
         words = sentence.lower().split()
         tokens = []
         for word in words:
@@ -92,6 +105,9 @@ class Processor:
         return preprocessing.sequence.pad_sequences([tokens], padding="post")
 
     def ask_question(self, inp):
+        """Function that takes in an input and generates an output using the seq-to-seq built and trained earlier. After
+        being given an input, function tokenizes input and passes it through the encoder and decoder, formatting the
+        values in-between to make it readable by the models."""
         if not inp:
             print("Input empty!")
             return None
@@ -146,6 +162,8 @@ class Processor:
         self.tokenizer = self.load_tokenizer(tokenizer)
 
     def chatbot_prep(self, questions, answers):
+        """Function that prepares the chatbot for talking, building models and training them on the inputted question
+        and answer data. Data should be inputted in two lists."""
         questions, answers = self.clean_data(questions, answers)
         tokenizer, vocab, vocab_size = self.create_tokenizer(questions, answers)
         model_data, maxlen_questions, maxlen_answers = self.prep_data(tokenizer, questions, answers, vocab_size)

@@ -3,6 +3,8 @@ import pyttsx3
 
 
 class TTS:
+    """Class that handles text-to-speech functionality."""
+
     def __init__(self):
         self.tts = pyttsx3.init()
         self.tts.setProperty("rate", 150)
@@ -13,6 +15,8 @@ class TTS:
 
 
 class STT:
+    """Class that handles speech-to-text functionality."""
+
     def __init__(self):
         self.rec = sr.Recognizer()
         self.mic = sr.Microphone()

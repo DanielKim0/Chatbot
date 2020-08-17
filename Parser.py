@@ -5,10 +5,14 @@ import yaml
 
 
 class Parser:
+    """Class that handles parsing the data into a format readable by machine learning models."""
+
     def __init__(self, path):
         self.path = path
 
     def parse_simple(self):
+        """Function that parses the 'simple' Chatterbot corpus. Corpus consists of several hundered question/answer
+        pairs in .yaml file format separated into files stored in a directory."""
         file_list = os.listdir(self.path)
         questions = []
         answers = []
@@ -34,6 +38,9 @@ class Parser:
         return questions, answers
 
     def parse_google(self):
+        """Function that parses Google's natural question corpus dataset, a more complex and larger dataset consisting
+        of several hundred thousand Google searches as well as their corresponding answers found on wikipedia pages.
+        Data is stored in one file in .json format, making it easily transportable to other files like it."""
         # line-by-line using file object as iterator to save memory
         questions = []
         answers = []
@@ -51,6 +58,7 @@ class Parser:
         return questions, answers
 
     def parse_line(self, line):
+        """Function that parses one line, or question/answer dataset, from the Google corpus file."""
         questions = []
         answers = []
 
@@ -64,13 +72,18 @@ class Parser:
         return questions, answers
 
     def store_data(self, questions, answers):
+        """Function that stores question/answer data in two different gzipped files."""
         qfile = gzip.open("questions.gzip", "wt")
         qfile.write("\n".join(questions))
 
         afile = gzip.open("answers.gzip", "wt")
         afile.write("\n".join(answers))
 
-    def main(self):
-        questions, answers = self.parse_simple()
-        self.store_data(questions, answers)
+    def main(self, google=False, store=False):
+        if google:
+            questions, answers = self.parse_google()
+        else:
+            questions, answers = self.parse_simple()
+        if store:
+            self.store_data(questions, answers)
         return questions, answers
