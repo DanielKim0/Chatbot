@@ -3,7 +3,9 @@ A chatbot written in Python powered by an encoder-decoder/seq2seq model. Inclues
 
 # Requirements
 python 3.7+ with modules tensorflow, keras, speech_recognition, pyttsx3, yaml
+
 TTS dependent on installing sapi5 (Windows), nsss (MacOS X), or espeak (Linux).
+
 STT dependent on installing pyaudio (all OSes).
 
 # Usage
