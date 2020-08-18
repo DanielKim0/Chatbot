@@ -1,6 +1,2 @@
-*.gzip
-*.txt
 __pycache__
 .vscode
-*.h5
-*.pickle
