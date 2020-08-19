@@ -1,3 +1,4 @@
+
 from Parser import Parser
 from Processor import Processor
 from Speech import TTS, STT
@@ -29,7 +30,7 @@ if __name__ == "__main__":
         bot.load_all(args["encoder"], args["decoder"], args["tokenizer"])
     else:
         p = Parser(args["corpus"])
-        q, a = p.main(args["google"], args["data_save"])
+        q, a = p.main(args["google"], args["qa_save"])
 
         bot = Processor()
         bot.main(q, a)
