@@ -1,5 +1,5 @@
 # Chatbot
-A chatbot written in Python powered by an encoder-decoder/seq2seq model. Inclues functionality for parsing corpus data, training the model on inputted question/answer data, and text-to-speech and speech-to-text conversions for actually speaking with the bot.
+A chatbot written in Python powered by an encoder-decoder/seq2seq model. Includes functionality for parsing corpus data, training the model on inputted question/answer data, and text-to-speech and speech-to-text conversions for actually speaking with the bot.
 
 # Requirements
 python 3.7+ with modules tensorflow, keras, speech_recognition, pyttsx3, yaml

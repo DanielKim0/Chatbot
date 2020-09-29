@@ -1,0 +1,7 @@
+tensorflow
+keras
+speech_recognition
+pyttsx3
+yaml
+espeak
+pyaudio
